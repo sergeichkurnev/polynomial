@@ -231,7 +231,7 @@ class poly
 {
 	list <mono> polynom;
 	string name;
-	int GetiNumber(string expr, int* i)//преобразование строки в число int, начиная с номера pos
+	int GetiNumber(string expr, int* i) const
 	{
 		string num = "";
 		for (int j = *i; j < expr.length(); j++, (*i)++)
@@ -243,8 +243,7 @@ class poly
 		return stoi(num);
 
 	}
-
-	double GetdNumber(string expr, int* i)//преобразование строки в число double, начиная с номера pos
+	double GetdNumber(string expr, int* i)const 
 	{
 		string num = "";
 		for (int j = *i; j < expr.length(); j++, (*i)++)
@@ -259,7 +258,51 @@ class poly
 		(*i)--;
 		return stod(num);
 	}
+	void ZeroDelete()
+	{
+		list<mono> TMP;
+		for (auto it = polynom.begin(); it != polynom.end(); it++)
+			if ((*it).koef() != 0)
+				TMP.push_back(*it);
+		polynom.clear();
+		polynom = TMP;
+	}
+	void MakeSimular()
+	{
+		for (auto it = polynom.begin(); it != polynom.end(); it++)
+		{
+			bool f = false;
+			for (auto jt = polynom.begin(); jt != polynom.end(); jt++)
+			{
+				if ((*it) == (*jt))
+				{
+					if (!f)
+						f = true;
+					else
+					{
+						(*it).koef() += (*jt).koef();
+						(*jt).koef() = 0;
+					}
+				}
+			}
+		}
+		ZeroDelete();
+	}
 public:
+	list<mono>& GetValue() { return polynom; }
+	string PToString() 
+	{
+		string out = "";  for (auto it = polynom.begin(); it != polynom.end(); it++)
+		{
+			if (out != "")
+				if ((*it).koef() > 0)    
+					out += '+';
+			if ((*it).koef() != (int)(*it).koef()) 
+				out += std::to_string((*it).koef()) + "x^" + to_string((*it).stx()) + "y^" + to_string((*it).sty()) + "z^" + to_string((*it).stz());
+			else
+				out += std::to_string((int)(*it).koef()) + "x^" + to_string((*it).stx()) + "y^" + to_string((*it).sty()) + "z^" + to_string((*it).stz());
+		}  return out;
+	}
 	string& GetName()
 	{
 		return name;
@@ -268,7 +311,7 @@ public:
 	{
 		name = "NONE";
 	}
-	void GetPoly(string str)
+	void poly::GetPoly(string str)
 	{
 		bool f = true;
 		string new_name = "";
@@ -293,7 +336,7 @@ public:
 				new_name += str[i];
 			else
 			{
-				if (str[i] == '-') // проверка числа на отрицательнось
+				if (str[i] == '-') // checking for -
 				{
 
 					f1 = true;
@@ -327,12 +370,8 @@ public:
 					else
 					{
 						M.stx() = 1;
-						if (i < len - 1)
-							i++;
 					}
 				}
-
-
 				if (str[i] == 'y')
 				{
 					fy = true;
@@ -352,8 +391,6 @@ public:
 					else
 					{
 						M.sty() = 1;
-						if (i < len - 1)
-							i++;
 					}
 				}
 
@@ -377,14 +414,12 @@ public:
 					else
 					{
 						M.stz() = 1;
-						if (i < len - 1)
-							i++;
 					}
 				}
 				if (M.koef() == 0 && (fx || fy || fz))
 				{
 					M.koef() = 1;
-					if (f)
+					if (f1)
 						M.koef() *= (-1);
 				}
 				if (str[i] == '+')
@@ -406,16 +441,16 @@ public:
 					polynom.push_back(M);
 					M.stx() = M.sty() = M.stz() = 0;
 					M.fx = M.fy = M.fz = false;
+					f1 = true;
 					M.koef() = 0;
-					f1 = fx = fz = fy = false;
-					i--;
+					fx = fz = fy = false;
 				}
 			}
 		}
 		name = new_name;
+		this->MakeSimular();
 	}
-	list<mono>& GetValue() { return polynom; }
-	poly operator+(mono M)
+	poly poly::operator+(mono M)
 	{
 		poly tmp;
 		tmp = *this;
@@ -429,10 +464,11 @@ public:
 			}
 		if (!f)
 			tmp.polynom.push_back(M);
+		tmp.MakeSimular();
 		return tmp;
 
 	}
-	bool operator==(poly P)
+	bool operator==( poly P)
 	{
 		list<mono>::iterator it2 = P.polynom.begin();
 		if (polynom.size() == P.polynom.size())
@@ -462,6 +498,7 @@ public:
 			M.koef() *= (-1);
 			tmp.polynom.push_back(M);
 		}
+		tmp.MakeSimular();
 		return tmp;
 	}
 	bool operator<(poly P)
@@ -480,7 +517,8 @@ public:
 		tmp = *this;
 		list<mono>::iterator it2 = P.polynom.begin();
 		for (; it2 != P.polynom.end(); it2++)
-			tmp = tmp + *it2;
+			tmp = tmp + (*it2);
+		tmp.MakeSimular();
 		return tmp;
 	}
 	poly& operator=(poly P)
@@ -499,6 +537,7 @@ public:
 		for (it2 = tmp.polynom.begin(); it2 != tmp.polynom.end(); it2++)
 			if ((*it2).koef() == 0)
 				tmp.polynom.erase(it2);
+		tmp.MakeSimular();
 		return tmp;
 	}
 	poly operator*(poly P)
@@ -507,6 +546,7 @@ public:
 		for (auto it = polynom.begin(); it != polynom.end(); it++)
 			for (auto itP = P.polynom.begin(); itP != P.polynom.end(); itP++)
 				tmp.polynom.push_back((*it)*(*itP));
+		tmp.MakeSimular();
 		return tmp;
 	}
 	poly operator*(db k)
